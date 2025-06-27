@@ -1,17 +1,19 @@
-
-# Credit Risk Probability Model Using Alternative Alternative Data
+# Credit Risk Probability Model Using Alternative Data
 
 ## 📌 Table of Contents
 
-- [Credit Risk Probability Model Using Alternative Alternative Data](#credit-risk-probability-model-using-alternative-alternative-data)
+- [Credit Risk Probability Model Using Alternative Data](#credit-risk-probability-model-using-alternative-data)
   - [📌 Table of Contents](#-table-of-contents)
   - [📘 Business Context](#-business-context)
-    - [Credit Scoring in Regulated Financial Services](#credit-scoring-in-regulated-financial-services)
+    - [Credit Scoring Business Understanding](#credit-scoring-business-understanding)
+      - [Data Inputs and Model Types](#data-inputs-and-model-types)
+      - [Risk Measurement in Regulatory Context](#risk-measurement-in-regulatory-context)
+      - [Ethical and Operational Considerations](#ethical-and-operational-considerations)
     - [1. Basel II: Emphasis on Model Transparency](#1-basel-ii-emphasis-on-model-transparency)
     - [2. Proxy Variables: Necessity and Risk](#2-proxy-variables-necessity-and-risk)
       - [Common Risks of Proxy Variables](#common-risks-of-proxy-variables)
     - [3. Model Trade-offs: Simplicity vs. Complexity](#3-model-trade-offs-simplicity-vs-complexity)
-      - [Comparison: Interpretable vs. Complex Models](#comparison-interpretable-vs-complex-models)
+    - [Questions and Answers](#questions-and-answers)
   - [🚀 Project Overview](#-project-overview)
     - [Key Steps:](#key-steps)
   - [📁 Project Structure](#-project-structure)
@@ -29,90 +31,141 @@
 
 ## 📘 Business Context
 
-### Credit Scoring in Regulated Financial Services
+### Credit Scoring Business Understanding
 
-Credit scoring models estimate the likelihood that a borrower will default. Financial institutions depend on these models to:
+Credit scoring is a statistical technique used by financial institutions to estimate the likelihood that a borrower will default. It informs lending decisions, interest rate settings, and portfolio risk management.
 
-- Manage **credit risk**
-- Optimize **capital allocation**
-- Comply with **regulatory standards** (e.g., Basel II Accord)
+Key motivations include:
 
-In regulated environments, model **interpretability** and **proxy variable design** are critical.
+- **Risk-based pricing:** Adjusting loan terms based on risk profiles.
+- **Capital optimization:** Allocating reserves efficiently using PD, LGD, and EAD metrics.
+- **Regulatory compliance:** Meeting supervisory requirements (e.g., Basel II/III).
+- **Operational scalability:** Automating approvals in high-volume environments.
+
+Modern credit scoring increasingly uses **alternative data**—such as mobile money, utility payments, and e-commerce behavior—to evaluate underbanked populations, promoting **financial inclusion** (World Bank, 2020).
+
+#### Data Inputs and Model Types
+
+Traditional inputs:
+- Repayment history
+- Credit utilization
+- Credit age
+- Account mix
+- Recent credit inquiries
+
+Alternative inputs:
+- RFM metrics (Recency, Frequency, Monetary) from transactions
+- Behavioral features (e.g., login frequency, abandoned carts)
+- Utility/telco data
+
+**Model types** range from:
+- **Supervised models:** Logistic Regression, Decision Trees, XGBoost
+- **Unsupervised models:** K-Means, DBSCAN (for segmentation and proxy labeling)
+
+These models often combine structured credit variables with behavioral data, as shown in the HKMA (2019) framework.
+
+#### Risk Measurement in Regulatory Context
+
+Basel II's IRB approach requires accurate estimation of:
+- **PD (Probability of Default)**
+- **LGD (Loss Given Default)**
+- **EAD (Exposure at Default)**
+
+These drive capital adequacy requirements. As Yeh & Lien (2018) highlight, while ML models may enhance predictive power, regulatory approval depends on **explainability, fairness, and documentation**.
+
+#### Ethical and Operational Considerations
+
+Credit scoring also faces non-technical risks:
+- **Bias/Fairness:** Risk of disparate impact on protected groups.
+- **Privacy:** Alternative data must comply with local laws.
+- **Explainability:** Complex models must be auditable (SHAP, LIME).
+
+Institutions should perform **bias audits**, build **interpretable pipelines**, and ensure **regulatory alignment** (Risk-Officer.com).
+
+> ⚖️ **Summary**: Credit scoring is not just a modeling challenge but a regulatory, ethical, and strategic priority. Models must be accurate, fair, transparent, and compliant—especially when using alternative data sources.
 
 ---
 
 ### 1. Basel II: Emphasis on Model Transparency
 
-Basel II introduced a three-pillar framework:
+Basel II introduces a three-pillar framework:
 
-- **Pillar 1: Minimum Capital Requirements** – Capital reserves must reflect risk.
-- **Pillar 2: Supervisory Review** – Internal models undergo rigorous regulatory scrutiny.
-- **Pillar 3: Market Discipline** – Transparent disclosure of risk metrics is mandatory.
+- **Pillar 1:** Capital requirements based on credit risk
+- **Pillar 2:** Supervisory review of internal models
+- **Pillar 3:** Market discipline via transparency
 
-**Implications:**
-
-- Models must be explainable and traceable.
-- Opaque or undocumented models increase regulatory risk and required capital buffers.
-- Institutions favor **interpretable** approaches like logistic regression over black-box models.
-
-> 🔍 *Regulatory non-compliance may result in delayed model approval, operational penalties, or increased capital requirements.*
+Implications:
+- Favor interpretable models like logistic regression.
+- Avoid "black-box" solutions without clear traceability.
+- Regulators require full documentation and auditability.
 
 ---
 
 ### 2. Proxy Variables: Necessity and Risk
 
-In many scenarios, especially when using **alternative data** (e.g., e-commerce transactions), **default labels are unavailable**. As a result, **proxy variables** are used to approximate risk, such as:
+In alternative data contexts, default labels are rare. We simulate risk using **proxy variables** like:
 
 - ≥90 Days Past Due
 - Account Write-Offs
-- 60-Day Missed Payments
-
-Poor proxy design can introduce **bias** and **regulatory misalignment**.
+- Missed Payments (60+ days)
 
 #### Common Risks of Proxy Variables
 
-| Risk Type               | Description                                                  | Impact                                                   |
-|------------------------|--------------------------------------------------------------|----------------------------------------------------------|
-| False Positives         | Overly strict proxies flag non-defaulters as risky           | Revenue loss due to rejecting good borrowers             |
-| False Negatives         | Weak proxies fail to identify true defaulters                | Unexpected defaults and credit losses                    |
-| Regulatory Misalignment | Proxy deviates from 90+ days delinquency standard            | Failed validation or regulatory pushback                 |
+| Risk Type               | Description                                       | Impact                                    |
+|------------------------|---------------------------------------------------|-------------------------------------------|
+| False Positives         | Good borrowers misclassified                      | Lost revenue                              |
+| False Negatives         | Risky borrowers overlooked                        | Unexpected defaults                        |
+| Regulatory Misalignment | Proxy doesn’t align with regulatory standards     | Model rejection or remediation required    |
 
-> 📝 *Example: Ignoring sudden income loss could cause underestimation of risk during economic downturns.*
+> 📝 Proxies must be transparent, justified, and statistically sound.
 
 ---
 
 ### 3. Model Trade-offs: Simplicity vs. Complexity
 
-#### Comparison: Interpretable vs. Complex Models
+| Criteria                | Simple Models (Logistic, WoE)  | Complex Models (XGBoost, NN)            |
+|------------------------|----------------------------------|------------------------------------------|
+| Interpretability       | ✅ High                         | ⚠️ Requires SHAP/LIME                   |
+| Regulatory Compliance  | ✅ Strong                       | ⚠️ Needs extensive validation           |
+| Accuracy               | ⚠️ Moderate                     | ✅ High                                  |
+| Development Cost       | ✅ Low                          | ⚠️ High                                  |
+| Operational Risk       | ✅ Low                          | ⚠️ Difficult to monitor/debug            |
 
-| Criteria                | Simple Models (Logistic Regression, WoE) | Complex Models (Gradient Boosting, Neural Nets)       |
-|------------------------|------------------------------------------|--------------------------------------------------------|
-| Interpretability       | High                                     | Low (requires SHAP, LIME for explanation)             |
-| Regulatory Compliance  | Strong                                   | Limited (requires extensive documentation)            |
-| Predictive Accuracy    | Moderate (AUC ~0.70–0.85)                 | High (AUC >0.85 with nonlinear features)              |
-| Development Cost       | Low                                      | High                                                   |
-| Operational Risk       | Low                                      | Higher (harder to monitor, retrain, and debug)         |
+> 🔄 Recommendation: Use **interpretable models for deployment**, and **ML models as challenger models** or for feature enrichment.
 
-> ✅ *Recommendation: Use simple models for compliance, augment with ML for performance benchmarking.*
+---
+
+### Questions and Answers
+
+**Q1:** *Why is interpretability critical under Basel II?*
+
+Basel II requires banks to justify risk estimates like PD, LGD, and EAD. Transparent models allow regulators to validate assumptions, increasing trust and reducing capital buffers.
+
+**Q2:** *Why do we use proxy variables, and what are the risks?*
+
+In the absence of default labels, proxy variables (e.g., high RFM risk segments) simulate borrower risk. If proxies are misaligned, the model may be biased or rejected by regulators.
+
+**Q3:** *What are the trade-offs between simple and complex models?*
+
+Simple models support compliance and transparency. Complex models may offer better accuracy but require justification tools (e.g., SHAP) and risk increased scrutiny.
 
 ---
 
 ## 🚀 Project Overview
 
-This repository contains a **credit risk probability model** for **Bati Bank’s Buy-Now-Pay-Later** product, built using **alternative e-commerce data**.
+This repository provides a **credit risk probability model** for Bati Bank’s Buy-Now-Pay-Later (BNPL) service using **alternative data**.
 
-The pipeline uses **RFM analysis** and **unsupervised clustering** to define proxy targets, followed by supervised learning to estimate default risk.
+It leverages **RFM segmentation**, **clustering**, and **supervised modeling** to estimate risk and deploy scores via API.
 
 ### Key Steps:
 
-1. Generate proxy target from RFM-based customer segments
-2. Engineer features from raw transaction data
-3. Train a probability-of-default model
-4. Map probabilities to credit scores
-5. Deploy the scoring system via an API
+1. Generate proxy target using RFM segmentation
+2. Feature engineering from transaction data
+3. Train supervised model (e.g., logistic regression or XGBoost)
+4. Convert probabilities into credit scores
+5. Expose scoring system via FastAPI
 
 ---
-
 ## 📁 Project Structure
 
 ```
