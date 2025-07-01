@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  credit-api:
+    build: .
+    image: batibank/credit-risk-api:latest
+    container_name: credit-risk-api
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=sqlite:///mlflow.db
+    volumes:
+      - ./models:/app/models
+      - ./mlflow.db:/app/mlflow.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mlflow-ui:
+    image: mlflow/mlflow
+    container_name: mlflow-ui
+    ports:
+      - "5000:5000"
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./artifacts --host 0.0.0.0
+    volumes:
+      - ./mlflow.db:/mlflow.db
+      - ./artifacts:/app/artifacts
+    depends_on:
+      - credit-api

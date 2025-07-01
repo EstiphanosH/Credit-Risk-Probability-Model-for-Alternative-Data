@@ -25,3 +25,8 @@ data/
 # IDE files
 .idea/
 .vscode/
+
+
+# docker and model
+models/
+mlflow.db
