@@ -26,6 +26,10 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.cluster import KMeans
 from scipy.spatial.distance import cdist
 from scipy import stats
+import argparse
+import os
+import sys
+import matplotlib.pyplot as plt
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -239,3 +243,108 @@ class RiskLabelGenerator:
         
         report['customer_pct'] = report['customer_count'] / report['customer_count'].sum()
         return report
+    
+def main():
+    # Set up command-line interface
+    parser = argparse.ArgumentParser(
+        description='Generate RFM-based Credit Risk Labels',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument('input', help='Path to transaction data CSV file')
+    parser.add_argument('--output', default='risk_labels.csv',
+                        help='Output filename for risk labels')
+    parser.add_argument('--clusters', type=int, default=3,
+                        help='Number of clusters for K-Means')
+    parser.add_argument('--recency_weight', type=float, default=0.5,
+                        help='Weight for recency in risk score')
+    parser.add_argument('--frequency_weight', type=float, default=0.3,
+                        help='Weight for frequency in risk score')
+    parser.add_argument('--monetary_weight', type=float, default=0.2,
+                        help='Weight for monetary in risk score')
+    parser.add_argument('--optimal_clusters', action='store_true',
+                        help='Find optimal cluster count using elbow method')
+    parser.add_argument('--max_k', type=int, default=10,
+                        help='Max clusters for elbow method')
+    parser.add_argument('--report', help='Generate cluster report to specified file')
+    parser.add_argument('--plot_elbow', action='store_true',
+                        help='Plot elbow curve when finding optimal clusters')
+    parser.add_argument('--random_state', type=int, 
+                        help='Random seed for reproducibility')
+    parser.add_argument('--verbose', action='store_true',
+                        help='Enable detailed logging')
+    
+    args = parser.parse_args()
+
+    # Configure logging
+    log_level = logging.INFO if args.verbose else logging.WARNING
+    logging.basicConfig(level=log_level, 
+                        format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger("RiskLabelGeneratorCLI")
+
+    try:
+        # Load transaction data
+        logger.info(f"Loading data from {args.input}")
+        transactions = pd.read_csv(args.input, parse_dates=['TransactionStartTime'])
+        
+        # Initialize label generator
+        labeler = RiskLabelGenerator(
+            n_clusters=args.clusters,
+            recency_weight=args.recency_weight,
+            frequency_weight=args.frequency_weight,
+            monetary_weight=args.monetary_weight,
+            random_state=args.random_state
+        )
+
+        # Handle optimal cluster analysis
+        if args.optimal_clusters:
+            logger.info(f"Finding optimal clusters (max_k={args.max_k})")
+            distortions = labeler.find_optimal_clusters(transactions, max_k=args.max_k)
+            
+            print("\nElbow Method Results:")
+            print(f"{'Clusters':<10} {'Distortion':<15}")
+            for k, dist in distortions.items():
+                print(f"{k:<10} {dist:.6f}")
+            
+            if args.plot_elbow:
+                plt.figure(figsize=(10, 6))
+                plt.plot(list(distortions.keys()), list(distortions.values()), 'bx-')
+                plt.xlabel('Number of clusters')
+                plt.ylabel('Distortion')
+                plt.title('Elbow Method for Optimal K')
+                plt.savefig('elbow_plot.png', bbox_inches='tight')
+                logger.info("Saved elbow plot to elbow_plot.png")
+            return
+
+        # Generate risk labels
+        logger.info("Generating risk labels")
+        labels = labeler.fit_transform(transactions)
+        labels.to_csv(args.output, index=False)
+        logger.info(f"Saved risk labels to {args.output}")
+        
+        # Calculate risk distribution
+        high_risk_count = labels['is_high_risk'].sum()
+        total_customers = len(labels)
+        risk_percentage = (high_risk_count / total_customers) * 100
+        
+        print("\nRisk Label Summary:")
+        print(f"Total customers: {total_customers}")
+        print(f"High-risk customers: {high_risk_count} ({risk_percentage:.1f}%)")
+        print(f"Output saved to: {os.path.abspath(args.output)}")
+
+        # Generate cluster report if requested
+        if args.report:
+            logger.info("Generating cluster report")
+            report = labeler.generate_cluster_report(transactions)
+            report.to_csv(args.report, index=False)
+            logger.info(f"Saved cluster report to {args.report}")
+            
+            print("\nCluster Report Summary:")
+            print(report[['cluster', 'customer_count', 'customer_pct', 'is_high_risk']])
+            print(f"Full report saved to: {os.path.abspath(args.report)}")
+
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
